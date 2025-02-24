@@ -259,7 +259,7 @@ class _DragAndDropScreenState extends State<DragAndDropScreen> {
             ),
           ),
           Row(children: [
-            CustomButton(width: 100.0,height: 50.0,color:Color(0xffceff51),text: "SAVE", onPressed:_captureCanvas,textColor: Colors.black,)
+            CustomButton(width: 100.0,height: 50.0,color:const Color(0xffceff51),text: "SAVE", onPressed:_captureCanvas,textColor: Colors.black,)
           ],)
         ],
       ),
@@ -333,13 +333,13 @@ class TargetsCard extends StatelessWidget {
             hoverColor: Colors.transparent,
             highlightColor: Colors.transparent,
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                   color: Colors.white,
                   border: Border(
                       right: BorderSide(
                     color: Color(0xff484444),
                   ))),
-              child: Align(
+              child: const Align(
                 alignment: AlignmentDirectional(0, 0),
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0, 4, 0, 4),
@@ -362,13 +362,13 @@ class TargetsCard extends StatelessWidget {
             hoverColor: Colors.transparent,
             highlightColor: Colors.transparent,
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                   color: Colors.white,
                   border: Border(
                       right: BorderSide(
                     color: Color(0xff484444),
                   ))),
-              child: Align(
+              child: const Align(
                 alignment: AlignmentDirectional(0, 0),
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0, 4, 0, 4),
@@ -391,10 +391,10 @@ class TargetsCard extends StatelessWidget {
             hoverColor: Colors.transparent,
             highlightColor: Colors.transparent,
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
               ),
-              child: Align(
+              child: const Align(
                 alignment: AlignmentDirectional(0, 0),
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0, 4, 0, 4),

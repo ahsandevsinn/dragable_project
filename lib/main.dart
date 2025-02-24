@@ -1,4 +1,5 @@
 import 'package:dragable_project/DragDropScreen.dart';
+import 'package:dragable_project/DragDropScreentest.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -19,7 +20,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: DragAndDropScreen(),
+      home: const DragAndDropScreenTest(),
       // home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
@@ -36,7 +37,7 @@ class _DragDropScreenState extends State<DragDropScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Drag & Drop Canvas")),
+      appBar: AppBar(title: const Text("Drag & Drop Canvas")),
       body:  Column(
   children: [
     // Drag Target Canvas with fixed height
@@ -54,7 +55,7 @@ class _DragDropScreenState extends State<DragDropScreen> {
         },
         builder: (context, candidateData, rejectedData) {
           return Container(
-            margin: EdgeInsets.all(10),
+            margin: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: Colors.grey[300],
               border: Border.all(color: Colors.black, width: 2),
@@ -83,7 +84,7 @@ class _DragDropScreenState extends State<DragDropScreen> {
                         draggableItems.add(item.icon);
                       });
                     },
-                    child: Text(item.icon, style: TextStyle(fontSize: 40)),
+                    child: Text(item.icon, style: const TextStyle(fontSize: 40)),
                   ),
                 );
               }).toList(),
@@ -108,13 +109,13 @@ class _DragDropScreenState extends State<DragDropScreen> {
                     data: item,
                     feedback: Material(
                       color: Colors.transparent,
-                      child: Text(item, style: TextStyle(fontSize: 40)),
+                      child: Text(item, style: const TextStyle(fontSize: 40)),
                     ),
                     childWhenDragging: Opacity(
                       opacity: 0.5,
-                      child: Text(item, style: TextStyle(fontSize: 40)),
+                      child: Text(item, style: const TextStyle(fontSize: 40)),
                     ),
-                    child: Text(item, style: TextStyle(fontSize: 40)),
+                    child: Text(item, style: const TextStyle(fontSize: 40)),
                   ),
                 )
                 .toList(),
