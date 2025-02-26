@@ -7,7 +7,8 @@ class DragAndDropScreenRotate extends StatefulWidget {
   const DragAndDropScreenRotate({super.key});
 
   @override
-  State<DragAndDropScreenRotate> createState() => _DragAndDropScreenRotateState();
+  State<DragAndDropScreenRotate> createState() =>
+      _DragAndDropScreenRotateState();
 }
 
 class _DragAndDropScreenRotateState extends State<DragAndDropScreenRotate> {
@@ -25,13 +26,12 @@ class _DragAndDropScreenRotateState extends State<DragAndDropScreenRotate> {
   ];
 
   List<DraggableItem> get droppedItems => history[historyIndex];
-
   void saveToHistory(List<DraggableItem> newItems) {
     setState(() {
       if (historyIndex < history.length - 1) {
         history = history.sublist(0, historyIndex + 1);
       }
-      history.add(List.from(newItems));
+      history.add(List.from(newItems)); // Add the exact state
       historyIndex++;
     });
   }
@@ -45,6 +45,7 @@ class _DragAndDropScreenRotateState extends State<DragAndDropScreenRotate> {
       imagePath: imagePath,
       position: Offset(size.width / 2 - 25,
           200 - 25), // Centering (assuming container height is 400)
+      // initialPosition: Offset(size.width / 2 - 25, 200 - 25), // Set initial position
     );
 
     final newItems = List<DraggableItem>.from(droppedItems)..add(newItem);
@@ -52,9 +53,11 @@ class _DragAndDropScreenRotateState extends State<DragAndDropScreenRotate> {
   }
 
   void undo() {
+    print(historyIndex);
+    int h = historyIndex;
     if (historyIndex > 0) {
       setState(() {
-        historyIndex--;
+        historyIndex = h - historyIndex+1;
       });
     }
   }
@@ -113,9 +116,10 @@ class _DragAndDropScreenRotateState extends State<DragAndDropScreenRotate> {
       if (index != -1) {
         final item = newItems[index];
         final itemCenter =
-            item.position + Offset(25, 25); // Assuming the item is 50x50
+            item.position + const Offset(25, 25); // Assuming the item is 50x50
         final angle = (touchPositionInRenderBox - itemCenter).direction;
         newItems[index] = DraggableItem(
+          // initialPosition: const Offset(0, 0),
           id: item.id,
           imagePath: item.imagePath,
           position: item.position,
@@ -175,7 +179,9 @@ class _DragAndDropScreenRotateState extends State<DragAndDropScreenRotate> {
               child: Container(
                 decoration: const BoxDecoration(color: Color(0xff484444)),
                 child: Stack(
-                  children: droppedItems.map((item) => _buildDraggableItem(item)).toList(),
+                  children: droppedItems
+                      .map((item) => _buildDraggableItem(item))
+                      .toList(),
                 ),
               ),
             ),
@@ -250,85 +256,79 @@ class _DragAndDropScreenRotateState extends State<DragAndDropScreenRotate> {
       ),
     );
   }
+
   Widget _buildDraggableItem(DraggableItem item) {
-  return Positioned(
-    left: item.position.dx - 10,
-    top: item.position.dy - 10,
-    child: GestureDetector(
-      onTap: () {
-        setState(() {
-          if (item.isSelected) {
-            // If already selected, deselect
-            item.isSelected = false;
-          } else {
-            // Deselect all others and select this one
-            for (var otherItem in droppedItems) {
-              otherItem.isSelected = false;
+    return Positioned(
+      left: item.position.dx - 10,
+      top: item.position.dy - 10,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            if (item.isSelected) {
+              // If already selected, deselect
+              item.isSelected = false;
+            } else {
+              // Deselect all others and select this one
+              for (var otherItem in droppedItems) {
+                otherItem.isSelected = false;
+              }
+              item.isSelected = true;
             }
-            item.isSelected = true;
+          });
+        },
+        onPanUpdate: (details) {
+          if (!item.isSelected) return; // Move only if selected
+          final newItems = List<DraggableItem>.from(droppedItems);
+          int index = newItems.indexWhere((i) => i.id == item.id);
+
+          if (index != -1) {
+            double newX = item.position.dx + details.delta.dx;
+            double newY = item.position.dy + details.delta.dy;
+            // Update the position of the item
+            newItems[index] = item.copyWith(position: Offset(newX, newY));
+            saveToHistory(newItems);
           }
-        });
-      },
-      onPanUpdate: (details) {
-        if (!item.isSelected) return; // Move only if selected
-        final newItems = List<DraggableItem>.from(droppedItems);
-        int index = newItems.indexWhere((i) => i.id == item.id);
-
-        if (index != -1) {
-          double newX = item.position.dx + details.delta.dx;
-          double newY = item.position.dy + details.delta.dy;
-          // Optional: add boundaries
-          newItems[index] = DraggableItem(
-            id: item.id,
-            imagePath: item.imagePath,
-            position: Offset(newX, newY),
-            rotation: item.rotation,
-            isSelected: item.isSelected,
-          );
-          saveToHistory(newItems);
-        }
-      },
-      child: Stack(
-        children: [
-          Transform.rotate(
-            angle: item.rotation,
-            child: Image.asset(item.imagePath, width: 50, height: 50),
-          ),
-          if (item.isSelected) _buildSelectionOverlay(item),
-        ],
+        },
+        child: Stack(
+          children: [
+            Transform.rotate(
+              angle: item.rotation,
+              child: Image.asset(item.imagePath, width: 50, height: 50),
+            ),
+            if (item.isSelected) _buildSelectionOverlay(item),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-Widget _buildSelectionOverlay(DraggableItem item) {
-  return Positioned.fill(
-    child: Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.blue, width: 2),
-        // Optional: make the border dashed or styled differently
-      ),
-      child: Align(
-        alignment: Alignment.topRight,
-        child: GestureDetector(
-          onPanUpdate: (details) {
-            final angleDelta = details.delta.direction; // Simple angle update
-            setState(() {
-              item.rotation += angleDelta;
-            });
-          },
-          child: Container(
-            color: Colors.white, // Visual indication of the rotation handle
-            width: 20,
-            height: 20,
-            child: Center(child: const Icon(Icons.rotate_right_outlined)),
+  Widget _buildSelectionOverlay(DraggableItem item) {
+    return Positioned.fill(
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.blue, width: 2),
+          // Optional: make the border dashed or styled differently
+        ),
+        child: Align(
+          alignment: Alignment.topRight,
+          child: GestureDetector(
+            onPanUpdate: (details) {
+              final angleDelta = details.delta.direction; // Simple angle update
+              setState(() {
+                item.rotation += angleDelta;
+              });
+            },
+            child: Container(
+              color: Colors.white, // Visual indication of the rotation handle
+              width: 20,
+              height: 20,
+              child: const Center(child: Icon(Icons.rotate_right_outlined)),
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }
 
 class NotchedRectangle extends ShapeBorder {
@@ -460,8 +460,18 @@ class DraggableItem {
     this.rotation = 0.0,
     this.isSelected = false,
   });
-}
 
+  // To clone the DraggableItem
+  DraggableItem copyWith({Offset? position}) {
+    return DraggableItem(
+      id: id,
+      imagePath: imagePath,
+      position: position ?? this.position,
+      rotation: rotation,
+      isSelected: isSelected,
+    );
+  }
+}
 
 class TargetsCard extends StatelessWidget {
   const TargetsCard({super.key});
