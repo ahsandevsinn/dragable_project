@@ -1,3 +1,5 @@
+// import 'package:dragable_project/DragAbleWidget.dart';
+import 'package:dragable_project/DargAbleWidget.dart';
 import 'package:dragable_project/DragDropScreen.dart';
 import 'package:dragable_project/DragDropScreentest.dart';
 import 'package:dragable_project/DragDropScreentestrotate.dart';
@@ -20,7 +22,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const DragAndDropScreenRotate(),
+      home:  DragAbleWidget(),
       // home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
