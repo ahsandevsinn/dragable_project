@@ -7,8 +7,7 @@ class DragAbleWidget extends StatefulWidget {
   const DragAbleWidget({super.key});
 
   @override
-  State<DragAbleWidget> createState() =>
-      _DragAbleWidgetState();
+  State<DragAbleWidget> createState() => _DragAbleWidgetState();
 }
 
 class _DragAbleWidgetState extends State<DragAbleWidget> {
@@ -35,17 +34,29 @@ class _DragAbleWidgetState extends State<DragAbleWidget> {
     }
   }
 
-  bool _isSignificantChange(List<DraggableItem> current, List<DraggableItem> previous) {
+  bool _isSignificantChange(
+      List<DraggableItem> current, List<DraggableItem> previous) {
     if (current.length != previous.length) return true;
     for (int i = 0; i < current.length; i++) {
-      if ((current[i].position - previous[i].position).distance > 5) { 
+      if ((current[i].position - previous[i].position).distance > 5 ||
+          (current[i].rotation - previous[i].rotation).abs() > 0.01) {
         return true;
       }
     }
     return false;
   }
 
-  void _addItemToCenter(String? imagePath) {
+  void _deleteSelectedItem() {
+    if (selectedItemId == null) return;
+
+    setState(() {
+      droppedItems.removeWhere((item) => item.id == selectedItemId);
+      saveToHistory(droppedItems);
+      selectedItemId = null; // Clear selection after deletion
+    });
+  }
+
+  void addItemToCenter(String? imagePath) {
     if (imagePath == null) return;
 
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
@@ -108,31 +119,30 @@ class _DragAbleWidgetState extends State<DragAbleWidget> {
     });
   }
 
-String? selectedItemId;
+  String? selectedItemId;
 
-void _selectItem(String itemId) {
-  setState(() {
-    selectedItemId = itemId;
-  });
-}
+  void _selectItem(String itemId) {
+    setState(() {
+      selectedItemId = itemId;
+    });
+  }
 
-void _rotateSelectedItem() {
-  if (selectedItemId == null) return;
+  void _rotateSelectedItem() {
+    if (selectedItemId == null) return;
 
-  setState(() {
     final index = droppedItems.indexWhere((item) => item.id == selectedItemId);
     if (index != -1) {
-      final item = droppedItems[index];
-      droppedItems[index] = DraggableItem(
-        id: item.id,
-        imagePath: item.imagePath,
-        position: item.position,
-        rotation: item.rotation + 0.9, // Rotate by 0.1 radians (~5.7°)
-      );
+      setState(() {
+        droppedItems[index] = DraggableItem(
+          id: droppedItems[index].id,
+          imagePath: droppedItems[index].imagePath,
+          position: droppedItems[index].position,
+          rotation: droppedItems[index].rotation + 0.9, // 5.7°
+        );
+        saveToHistory(droppedItems);
+      });
     }
-  });
-}
-
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +150,7 @@ void _rotateSelectedItem() {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text('STAGE CREATOR',
+        title: Text('STAGE CREATOR',
             style: TextStyle(
                 color: Color(0xffceff51),
                 fontSize: 18,
@@ -158,80 +168,109 @@ void _rotateSelectedItem() {
               ),
             ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 IconButton(
+                    style: ButtonStyle(
+                      shadowColor:
+                          MaterialStateProperty.all(Colors.transparent),
+                      overlayColor: MaterialStateProperty.all(
+                          Colors.transparent), // Removes hover/click effect
+                      splashFactory:
+                          NoSplash.splashFactory, // Removes press effect
+                    ),
                     icon: const Icon(Icons.rotate_left_rounded,
                         color: Color(0xffceff51)),
                     onPressed: undo),
                 IconButton(
+                    style: ButtonStyle(
+                      shadowColor:
+                          MaterialStateProperty.all(Colors.transparent),
+                      overlayColor: MaterialStateProperty.all(
+                          Colors.transparent), // Removes hover/click effect
+                      splashFactory:
+                          NoSplash.splashFactory, // Removes press effect
+                    ),
                     icon: const Icon(Icons.refresh, color: Color(0xffceff51)),
                     onPressed: redo),
                 IconButton(
+                    style: ButtonStyle(
+                      shadowColor:
+                          MaterialStateProperty.all(Colors.transparent),
+                      overlayColor: MaterialStateProperty.all(
+                          Colors.transparent), // Removes hover/click effect
+                      splashFactory:
+                          NoSplash.splashFactory, // Removes press effect
+                    ),
                     icon: const Icon(Icons.delete, color: Color(0xffceff51)),
                     onPressed: _deleteAll),
               ],
             ),
+        
+
           )
         ],
       ),
       body: SingleChildScrollView(
+          child: DefaultTabController(
+        length: 3, // Targets, No Shoots, Misc
         child: Column(
           children: [
             Screenshot(
-  controller: screenshotController,
-  child: SizedBox(
-    height: 350,
-    child: Container(
-      decoration: const BoxDecoration(color: Color(0xff484444)),
-      child: DragTarget<DraggableItem>(
-        onAccept: (item) {
-          setState(() {
-            droppedItems.add(item);
-          });
-        },
-        builder: (context, candidateData, rejectedData) {
-          return Stack(
-            children: droppedItems
-                .map((item) => _buildDraggableItem(item))
-                .toList(),
-          );
-        },
-      ),
-    ),
-  ),
-),
-      
-          
-            const TargetsCard(),
+              controller: screenshotController,
+              child: SizedBox(
+                height: 350,
+                child: Container(
+                  decoration: const BoxDecoration(color: Color(0xff484444)),
+                  child: DragTarget<DraggableItem>(
+                    onAccept: (item) {
+                      setState(() {
+                        droppedItems.add(item);
+                      });
+                    },
+                    builder: (context, candidateData, rejectedData) {
+                      return Stack(
+                        children: droppedItems
+                            .map((item) => _buildDraggableItem(item))
+                            .toList(),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            TabBar(
+              labelColor: Colors.black,
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: Colors.black,
+              indicatorWeight: 5.0,
+              indicator: BoxDecoration(
+                color: Colors.black,
+              ),
+              tabs: [
+                Tab(
+                    child: CustomTabItem(
+                  text: "TARGETS",
+                )),
+                Tab(
+                    child: CustomTabItem(
+                  text: "NO SHOOTS",
+                )),
+                Tab(
+                  child: CustomTabItem(
+                    text: "MiSC",
+                  ),
+                ),
+              ],
+            ),
             Container(
               height: 250,
-              color: const Color(0xff484444),
-              child: Center(
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: draggableImages.map((item) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          GestureDetector(
-                            onTap: () => _addItemToCenter(item["image"]!),
-                            child: Image.asset(item["image"]!,
-                                width: 60, height: 60),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(item["name"]!,
-                              style: const TextStyle(
-                                  fontSize: 14, color: Colors.white)),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
+              child: TabBarView(
+                children: [
+                  _buildTargetImages(),
+                  _buildNoShootImages(),
+                  _buildMiscImages(),
+                ],
               ),
             ),
             const SizedBox(height: 20),
@@ -254,7 +293,7 @@ void _rotateSelectedItem() {
                   height: 50.0,
                   color: const Color(0xff686868),
                   text: "Delete",
-                  onPressed: _deleteAll,
+                  onPressed: _deleteSelectedItem,
                 )
               ],
             ),
@@ -265,18 +304,19 @@ void _rotateSelectedItem() {
               width: 140.0,
               height: 50.0,
               color: const Color(0xff686868),
-              text: "reset",
+              text: "Reset",
               onPressed: _deleteAll,
-            )
+            ),
+            const SizedBox(height: 20),
           ],
         ),
-     
-      ),
-      
+      )),
+    
     
     );
   }
-Widget _buildDraggableItem(DraggableItem item) {
+
+  Widget _buildDraggableItem(DraggableItem item) {
     final bool isSelected = item.id == selectedItemId;
     return Positioned(
       left: item.position.dx,
@@ -290,6 +330,7 @@ Widget _buildDraggableItem(DraggableItem item) {
           });
           saveToHistory(droppedItems);
         },
+
         child: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.center,
@@ -342,12 +383,49 @@ Widget _buildDraggableItem(DraggableItem item) {
     );
   }
 
+  Widget _buildImageGrid(List<Map<String, String>> images) {
+    return Container(
+      width: 250,
+      color: const Color(0xff484444),
+      child: Center(
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: images.map((item) {
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () => addItemToCenter(item["image"]!),
+                    child: Image.asset(item["image"]!, width: 60, height: 60),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(item["name"]!,
+                      style:
+                          const TextStyle(fontSize: 14, color: Colors.white)),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
 
+  Widget _buildTargetImages() {
+    return _buildImageGrid(draggableImages);
+  }
 
+  Widget _buildNoShootImages() {
+    return _buildImageGrid(draggableImages);
+  }
+
+  Widget _buildMiscImages() {
+    return _buildImageGrid(draggableImages);
+  }
 }
-
-
-
 
 class NotchedRectangle extends ShapeBorder {
   final double notchSize;
@@ -491,100 +569,130 @@ class DraggableItem {
   }
 }
 
+// class TargetsCard extends StatelessWidget {
+//   const TargetsCard({super.key});
 
-class TargetsCard extends StatelessWidget {
-  const TargetsCard({super.key});
+//   @override
+//   Widget build(BuildContext context) {
+//     return Row(
+//       children: [
+//         // Generated code for this Container Widget...
+//         Expanded(
+//           child: InkWell(
+//             splashColor: Colors.transparent,
+//             focusColor: Colors.transparent,
+//             hoverColor: Colors.transparent,
+//             highlightColor: Colors.transparent,
+//             child: Container(
+//               decoration: const BoxDecoration(
+//                   color: Colors.white,
+//                   border: Border(
+//                       right: BorderSide(
+//                     color: Color(0xff484444),
+//                   ))),
+//               child: const Align(
+//                 alignment: AlignmentDirectional(0, 0),
+//                 child: Padding(
+//                   padding: EdgeInsetsDirectional.fromSTEB(0, 4, 0, 4),
+//                   child: Text(
+//                     'TARGETS',
+//                     style: TextStyle(
+//                       fontFamily: 'Inter',
+//                       letterSpacing: 0.0,
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ),
+//         Expanded(
+//           child: InkWell(
+//             splashColor: Colors.transparent,
+//             focusColor: Colors.transparent,
+//             hoverColor: Colors.transparent,
+//             highlightColor: Colors.transparent,
+//             child: Container(
+//               decoration: const BoxDecoration(
+//                   color: Colors.white,
+//                   border: Border(
+//                       right: BorderSide(
+//                     color: Color(0xff484444),
+//                   ))),
+//               child: const Align(
+//                 alignment: AlignmentDirectional(0, 0),
+//                 child: Padding(
+//                   padding: EdgeInsetsDirectional.fromSTEB(0, 4, 0, 4),
+//                   child: Text(
+//                     'NO SHOOTS',
+//                     style: TextStyle(
+//                       fontFamily: 'Inter',
+//                       letterSpacing: 0.0,
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ),
+//         Expanded(
+//           child: InkWell(
+//             splashColor: Colors.transparent,
+//             focusColor: Colors.transparent,
+//             hoverColor: Colors.transparent,
+//             highlightColor: Colors.transparent,
+//             child: Container(
+//               decoration: const BoxDecoration(
+//                 color: Colors.white,
+//               ),
+//               child: const Align(
+//                 alignment: AlignmentDirectional(0, 0),
+//                 child: Padding(
+//                   padding: EdgeInsetsDirectional.fromSTEB(0, 4, 0, 4),
+//                   child: Text(
+//                     'MISC',
+//                     style: TextStyle(
+//                       fontFamily: 'Inter',
+//                       letterSpacing: 0.0,
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ),
+//         )
+//       ],
+//     );
+//   }
+// }
+
+class CustomTabItem extends StatelessWidget {
+  final String text;
+
+  const CustomTabItem({super.key, required this.text});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        // Generated code for this Container Widget...
-        Expanded(
-          child: InkWell(
-            splashColor: Colors.transparent,
-            focusColor: Colors.transparent,
-            hoverColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-            child: Container(
-              decoration: const BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                      right: BorderSide(
-                    color: Color(0xff484444),
-                  ))),
-              child: const Align(
-                alignment: AlignmentDirectional(0, 0),
-                child: Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(0, 4, 0, 4),
-                  child: Text(
-                    'TARGETS',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      letterSpacing: 0.0,
-                    ),
-                  ),
-                ),
-              ),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(right: BorderSide(color: Color(0xff484444))),
+      ),
+      child: Align(
+        alignment: AlignmentDirectional(0, 0),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              letterSpacing: 0.0,
+              color: Colors.black,
             ),
           ),
         ),
-        Expanded(
-          child: InkWell(
-            splashColor: Colors.transparent,
-            focusColor: Colors.transparent,
-            hoverColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-            child: Container(
-              decoration: const BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                      right: BorderSide(
-                    color: Color(0xff484444),
-                  ))),
-              child: const Align(
-                alignment: AlignmentDirectional(0, 0),
-                child: Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(0, 4, 0, 4),
-                  child: Text(
-                    'NO SHOOTS',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      letterSpacing: 0.0,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        Expanded(
-          child: InkWell(
-            splashColor: Colors.transparent,
-            focusColor: Colors.transparent,
-            hoverColor: Colors.transparent,
-            highlightColor: Colors.transparent,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-              ),
-              child: const Align(
-                alignment: AlignmentDirectional(0, 0),
-                child: Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(0, 4, 0, 4),
-                  child: Text(
-                    'MISC',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      letterSpacing: 0.0,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        )
-      ],
+      ),
     );
   }
 }
+
